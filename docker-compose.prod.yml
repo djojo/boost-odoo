@@ -21,40 +21,28 @@ services:
       - ./addons:/mnt/extra-addons
       - ./odoo.conf:/etc/odoo/odoo.conf
       - /var/lib/odoo/data:/var/lib/odoo
-    # Traefik va gérer le SSL et le reverse proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.odoo.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`) || HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
-      - "traefik.http.routers.odoo.entrypoints=websecure"
-      - "traefik.http.routers.odoo.tls.certresolver=letsencrypt"
-      - "traefik.http.services.odoo.loadbalancer.server.port=8069"
-      # Redirect HTTP to HTTPS
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.routers.odoo-http.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`) || HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
-      - "traefik.http.routers.odoo-http.entrypoints=web"
-      - "traefik.http.routers.odoo-http.middlewares=redirect-to-https"
+    # Caddy va gérer le SSL et le reverse proxy
+    # Pas besoin de ports exposés, Caddy s'en occupe
+    ports: []
 
-  traefik:
-    image: traefik:v3.2
-    container_name: traefik
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: caddy
     restart: always
     environment:
-      - DOCKER_API_VERSION=1.44
-    command:
-      - "--api.insecure=false"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - DOMAIN=${DOMAIN}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp"  # HTTP/3
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /var/lib/odoo/letsencrypt:/letsencrypt
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - /var/lib/odoo/caddy/data:/data
+      - /var/lib/odoo/caddy/config:/config
+      - /var/lib/odoo/caddy/logs:/var/log/caddy
     networks:
       - odoo-network
+    depends_on:
+      - odoo
 

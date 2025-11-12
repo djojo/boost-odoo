@@ -1,6 +1,7 @@
 # Odoo data
 data/
 postgres/
+caddy/
 *.pyc
 *.pyo
 __pycache__/
