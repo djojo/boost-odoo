@@ -35,7 +35,7 @@ services:
       - "traefik.http.routers.odoo-http.middlewares=redirect-to-https"
 
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.2
     container_name: traefik
     restart: always
     environment:
