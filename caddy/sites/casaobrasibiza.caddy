@@ -5,13 +5,13 @@ erp.casaobrasibiza.com {
     # Websocket et Longpolling - Port 8072
     handle /websocket* {
         reverse_proxy odoo:8072 {
-            header_up X-Odoo-dbfilter erp_casaobrasibiza
+            header_up X-Odoo-dbfilter erp_casaobrasibiza_com
         }
     }
     
     handle /longpolling/* {
         reverse_proxy odoo:8072 {
-            header_up X-Odoo-dbfilter erp_casaobrasibiza
+            header_up X-Odoo-dbfilter erp_casaobrasibiza_com
         }
     }
     
@@ -25,7 +25,7 @@ erp.casaobrasibiza.com {
         
         reverse_proxy odoo:8069 {
             # Forcer la base de données via header
-            header_up X-Odoo-dbfilter erp_casaobrasibiza
+            header_up X-Odoo-dbfilter erp_casaobrasibiza_com
         }
     }
     
