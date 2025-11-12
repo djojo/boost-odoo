@@ -1,0 +1,37 @@
+# Exemple de configuration client
+# Copiez ce fichier et renommez-le en : clientname.caddy
+
+# Exemple : erp.casaobras.com → base de données "casaobras"
+erp.casaobras.com {
+    reverse_proxy odoo:8069 {
+        # Indique à Odoo quelle base de données utiliser
+        header_up X-Odoo-dbfilter casaobras
+    }
+    
+    log {
+        output file /var/log/caddy/casaobras.log
+    }
+}
+
+# Autre exemple : crm.iya.com → base de données "iya"
+# crm.iya.com {
+#     reverse_proxy odoo:8069 {
+#         header_up X-Odoo-dbfilter iya
+#     }
+#     
+#     log {
+#         output file /var/log/caddy/iya.log
+#     }
+# }
+
+# Autre exemple : admin.autreclient.com → base de données "autreclient"
+# admin.autreclient.com {
+#     reverse_proxy odoo:8069 {
+#         header_up X-Odoo-dbfilter autreclient
+#     }
+#     
+#     log {
+#         output file /var/log/caddy/autreclient.log
+#     }
+# }
+

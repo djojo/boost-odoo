@@ -1,10 +1,14 @@
 # Odoo data
 data/
 postgres/
-caddy/
 *.pyc
 *.pyo
 __pycache__/
+
+# Caddy data (mais pas les configs)
+caddy/data/
+caddy/config/
+caddy/logs/
 
 # Logs
 *.log
