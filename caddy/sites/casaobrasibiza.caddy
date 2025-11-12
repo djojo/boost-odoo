@@ -1,7 +1,14 @@
 erp.casaobrasibiza.com {
-    reverse_proxy odoo:8069 {
-        header_up X-Odoo-dbfilter casa_obras
+    # Forcer la sélection de la base de données casa_obras
+    @no_db_param {
+        not query db=*
     }
+    handle @no_db_param {
+        redir * "{uri}?db=casa_obras" 307
+    }
+    
+    reverse_proxy odoo:8069
+    
     log {
         output file /var/log/caddy/casa_obras.log
     }

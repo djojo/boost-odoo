@@ -60,10 +60,15 @@ cat > "$CADDY_FILE" << EOF
 # Généré le: $(date)
 
 $FULL_DOMAIN {
-    reverse_proxy odoo:8069 {
-        # Indique à Odoo quelle base de données utiliser
-        header_up X-Odoo-dbfilter $DB_NAME
+    # Forcer la sélection de la base de données via paramètre URL
+    @no_db_param {
+        not query db=*
     }
+    handle @no_db_param {
+        redir * "{uri}?db=$DB_NAME" 307
+    }
+    
+    reverse_proxy odoo:8069
     
     log {
         output file /var/log/caddy/${DB_NAME}.log
@@ -95,7 +100,7 @@ echo ""
 echo -e "${YELLOW}4. Sur le VPS, récupérer et recharger:${NC}"
 echo "   ${GREEN}cd /opt/boost-odoo${NC}"
 echo "   ${GREEN}git pull origin main${NC}"
-echo "   ${GREEN}docker exec caddy caddy reload --config /etc/caddy/Caddyfile${NC}"
+echo "   ${GREEN}docker-compose -f docker-compose.yml -f docker-compose.prod.yml restart caddy${NC}"
 echo ""
 echo -e "${YELLOW}5. Tester:${NC}"
 echo "   ${GREEN}https://$FULL_DOMAIN${NC}"
