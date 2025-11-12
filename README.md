@@ -134,7 +134,7 @@ Configurez vos sous-domaines DNS pour pointer vers votre VPS, Odoo filtrera auto
    
 2. Dans `docker-compose.yml` :
    - `POSTGRES_PASSWORD` → mot de passe sécurisé
-   - Ajoutez un reverse proxy (Nginx/Traefik) avec SSL
+   - Utilisez la configuration de production avec Caddy pour le SSL automatique
 
 3. Créez un fichier `.env` pour les variables sensibles :
 
@@ -143,7 +143,7 @@ POSTGRES_PASSWORD=votre_mot_de_passe_fort
 ADMIN_PASSWD=votre_master_password_fort
 ```
 
-## 📦 Déploiement sur VPS
+## 📦 Déploiement sur VPS avec SSL automatique
 
 ### 1. Préparer le VPS
 
@@ -151,6 +151,10 @@ ADMIN_PASSWD=votre_master_password_fort
 # Installer Docker et Docker Compose
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
+
+# Installer Docker Compose v2
+curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 ```
 
 ### 2. Cloner le projet
@@ -162,15 +166,50 @@ cd boost-odoo
 
 ### 3. Configurer pour la production
 
-- Modifiez les mots de passe
-- Ajoutez un reverse proxy avec SSL (Let's Encrypt)
-- Configurez les sauvegardes automatiques
+Créez un fichier `.env` avec vos identifiants :
 
-### 4. Lancer
+```env
+POSTGRES_USER=odoo
+POSTGRES_PASSWORD=VotreMotDePasseFort123!
+POSTGRES_DB=postgres
+
+ADMIN_PASSWD=VotreMasterPassword456!
+
+# Votre domaine
+DOMAIN=erp.votredomaine.com
+LETSENCRYPT_EMAIL=contact@votredomaine.com
+```
+
+**Important** : Configurez votre DNS pour pointer vers l'IP de votre VPS.
+
+### 4. Créer les dossiers nécessaires
 
 ```bash
-docker-compose up -d
+mkdir -p /var/lib/odoo/{data,postgres,caddy/{data,config,logs}}
 ```
+
+### 5. Lancer en production
+
+```bash
+# Avec Caddy pour SSL automatique
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Vérifier les logs de Caddy (SSL automatique)
+docker logs caddy -f
+```
+
+**Le SSL sera configuré automatiquement par Caddy via Let's Encrypt !** 🔒
+
+Après 1-2 minutes, accédez à : `https://votre-domaine.com`
+
+### 6. Reverse proxy Caddy
+
+Caddy gère automatiquement :
+- ✅ Certificats SSL via Let's Encrypt
+- ✅ Renouvellement automatique des certificats
+- ✅ Redirection HTTP → HTTPS
+- ✅ Support multi-domaines (sous-domaines pour multi-tenant)
+- ✅ HTTP/3 activé
 
 ## 🔄 Sauvegardes
 

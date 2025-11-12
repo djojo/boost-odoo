@@ -18,7 +18,7 @@ Local (Développement)  →  Git (GitHub/GitLab)  →  VPS (Production)
     ↓                          ↓                       ↓
   addons/                   Versionné              Déployé
   odoo.conf                 dans Git               avec Docker
-  docker-compose.yml                              + Traefik (SSL)
+  docker-compose.yml                              + Caddy (SSL auto)
 ```
 
 ### Workflow
@@ -108,13 +108,16 @@ A       *.votredomaine.com  IP_DE_VOTRE_VPS  (pour les sous-domaines)
 cd /opt/boost-odoo
 
 # Première fois : créez les dossiers de données
-mkdir -p /var/lib/odoo/{data,postgres,letsencrypt}
+mkdir -p /var/lib/odoo/{data,postgres,caddy/{data,config,logs}}
 
-# Lancez avec la config production
+# Lancez avec la config production (Caddy + SSL automatique)
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # Vérifiez les logs
 docker-compose logs -f
+
+# Vérifiez spécifiquement les logs de Caddy (SSL automatique)
+docker logs caddy -f
 ```
 
 ### 6. Déploiement depuis votre machine locale
@@ -288,8 +291,8 @@ docker-compose logs -f odoo
 # Logs PostgreSQL
 docker-compose logs -f db
 
-# Logs Traefik (reverse proxy)
-docker-compose logs -f traefik
+# Logs Caddy (reverse proxy + SSL)
+docker logs caddy -f
 ```
 
 ### Accéder au shell du conteneur
@@ -328,15 +331,23 @@ docker-compose restart
 ### Certificat SSL non généré
 
 ```bash
-# Vérifiez les logs de Traefik
-docker-compose logs traefik
+# Vérifiez les logs de Caddy
+docker logs caddy
+
+# Cherchez les erreurs de certificat SSL
+docker logs caddy 2>&1 | grep -i "certificate"
 
 # Vérifiez que le DNS pointe bien vers votre VPS
 ping votredomaine.com
 
-# Vérifiez les permissions du dossier letsencrypt
-ls -la /var/lib/odoo/letsencrypt/
+# Vérifiez les données Caddy
+ls -la /var/lib/odoo/caddy/
 ```
+
+Caddy génère automatiquement les certificats SSL via Let's Encrypt. Si vous voyez des erreurs :
+- Vérifiez que votre domaine pointe bien vers votre VPS
+- Vérifiez que les ports 80 et 443 sont ouverts
+- Attendez 1-2 minutes, Caddy va réessayer automatiquement
 
 ### Problème de connexion à la base de données
 
