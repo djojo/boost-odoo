@@ -75,13 +75,15 @@ $FULL_DOMAIN {
     }
     rewrite @no_db {uri}?db=$DB_NAME
     
-    # Longpolling pour Odoo (websocket/notifications)
-    @longpolling {
-        path /longpolling/*
+    # Websocket/Longpolling pour Odoo (notifications temps réel)
+    @websocket {
+        path /websocket /longpolling/*
     }
-    reverse_proxy @longpolling odoo:8072 {
+    reverse_proxy @websocket odoo:8072 {
         header_up X-Forwarded-Proto {scheme}
         header_up X-Real-IP {remote_host}
+        header_up Upgrade {http.request.header.Upgrade}
+        header_up Connection {http.request.header.Connection}
     }
     
     # Route principale vers Odoo
