@@ -5,22 +5,25 @@ Ce guide explique comment ajouter et gérer des clients Odoo avec leurs propres 
 ## 🎯 Architecture
 
 Chaque client a :
-- **Un domaine dédié** : `erp.casaobrasibiza.com`, `crm.iya.com`, etc.
-- **Une base de données isolée** basée sur le **2ème segment du domaine**
+- **Un domaine dédié** : `erp.casaobrasibiza.com`, `odoo.ibizaboost.com`, etc.
+- **Une base de données isolée** avec nom explicite
 - **Un certificat SSL automatique** : Géré par Caddy
 - **Des logs séparés** : `/var/log/caddy/clientname.log`
 
-### Convention de nommage automatique
+### Convention de nommage
 
-Le `dbfilter = ^[^.]+\.([^.]+)\.` dans `odoo.conf` extrait automatiquement le nom de la base :
+Le système utilise le module OCA `dbfilter_from_header`. Caddy envoie le nom de base via le header `X-Odoo-dbfilter`.
 
-| URL                          | Base de données |
-|------------------------------|----------------|
-| `erp.casaobrasibiza.com`     | `casaobrasibiza` |
-| `crm.ibizaboost.com`         | `ibizaboost` |
-| `admin.client.fr`            | `client` |
+Le nom de base est formé en **concaténant le sous-domaine + première partie du domaine** (sans points) :
 
-⚠️ **Le sous-domaine (erp, crm, admin, etc.) n'a PAS d'importance** - seul le 2ème segment compte.
+| URL                          | Base de données      |
+|------------------------------|---------------------|
+| `erp.casaobrasibiza.com`     | `erpcasaobrasibiza` |
+| `crm.boost.com`              | `crmboost`          |
+| `boostcrm.com`               | `boostcrm`          |
+| `odoo.ibizaboost.com`        | `odooibizaboost`    |
+
+✅ **Avantages** : Support pour tous types de domaines, pas de limitation sur la structure.
 
 ---
 
@@ -35,9 +38,9 @@ cd /opt/boost-odoo
 ./scripts/add-client.sh <domaine> [sous-domaine]
 
 # Exemples
-./scripts/add-client.sh casaobrasibiza.com erp    # → DB: casaobrasibiza
-./scripts/add-client.sh ibizaboost.com crm        # → DB: ibizaboost
-./scripts/add-client.sh client3.fr admin          # → DB: client3
+./scripts/add-client.sh casaobrasibiza.com erp    # → DB: erpcasaobrasibiza
+./scripts/add-client.sh boost.com crm             # → DB: crmboost
+./scripts/add-client.sh boostcrm.com              # → DB: boostcrm (sans sous-domaine)
 ```
 
 Le script va :
@@ -73,22 +76,26 @@ Le script va :
 
 ### Étape 2 : Créer la configuration Caddy
 
-Créez un fichier : `caddy/sites/casaobrasibiza.caddy`
+Créez un fichier : `caddy/sites/erpcasaobrasibiza.caddy`
 
 ```caddy
 # Configuration pour Casa Obras Ibiza
-# Domaine: erp.casaobrasibiza.com → Base: casaobrasibiza
+# Domaine: erp.casaobrasibiza.com → Base: erpcasaobrasibiza
 erp.casaobrasibiza.com {
     # Compression
     encode gzip
     
     # Websocket et Longpolling - Port 8072
     handle /websocket* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     handle /longpolling/* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     # Route principale - Port 8069
@@ -99,7 +106,9 @@ erp.casaobrasibiza.com {
         }
         header @static Cache-Control "public, max-age=31536000"
         
-        reverse_proxy odoo:8069
+        reverse_proxy odoo:8069 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     log {
@@ -109,8 +118,8 @@ erp.casaobrasibiza.com {
 ```
 
 **Important** :
-- Le nom du fichier doit correspondre au **2ème segment du domaine** : `casaobrasibiza.caddy`
-- Le nom de la base sera automatiquement extrait par Odoo : `casaobrasibiza`
+- Le nom du fichier doit être descriptif : `erpcasaobrasibiza.caddy`
+- Le header `X-Odoo-dbfilter` doit contenir le nom EXACT de la base : `erpcasaobrasibiza`
 
 ---
 
@@ -194,19 +203,23 @@ Vous devriez voir la page de connexion Odoo du client ! 🎉
 
 ### Exemple 1 : ERP pour Casa Obras Ibiza
 
-**Fichier** : `caddy/sites/casaobrasibiza.caddy`
+**Fichier** : `caddy/sites/erpcasaobrasibiza.caddy`
 
 ```caddy
-# Domaine: erp.casaobrasibiza.com → Base: casaobrasibiza
+# Domaine: erp.casaobrasibiza.com → Base: erpcasaobrasibiza
 erp.casaobrasibiza.com {
     encode gzip
     
     handle /websocket* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     handle /longpolling/* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     handle {
@@ -214,7 +227,9 @@ erp.casaobrasibiza.com {
             path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
         }
         header @static Cache-Control "public, max-age=31536000"
-        reverse_proxy odoo:8069
+        reverse_proxy odoo:8069 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     log {
@@ -224,25 +239,29 @@ erp.casaobrasibiza.com {
 ```
 
 **Accès** : https://erp.casaobrasibiza.com  
-**Base de données** : `casaobrasibiza` (extrait automatiquement)
+**Base de données** : `erpcasaobrasibiza` (défini via header X-Odoo-dbfilter)
 
 ---
 
-### Exemple 2 : CRM pour Ibiza Boost
+### Exemple 2 : Odoo pour Ibiza Boost
 
-**Fichier** : `caddy/sites/ibizaboost.caddy`
+**Fichier** : `caddy/sites/odooibizaboost.caddy`
 
 ```caddy
-# Domaine: crm.ibizaboost.com → Base: ibizaboost
-crm.ibizaboost.com {
+# Domaine: odoo.ibizaboost.com → Base: odooibizaboost
+odoo.ibizaboost.com {
     encode gzip
     
     handle /websocket* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter odooibizaboost
+        }
     }
     
     handle /longpolling/* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter odooibizaboost
+        }
     }
     
     handle {
@@ -250,61 +269,61 @@ crm.ibizaboost.com {
             path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
         }
         header @static Cache-Control "public, max-age=31536000"
-        reverse_proxy odoo:8069
+        reverse_proxy odoo:8069 {
+            header_up X-Odoo-dbfilter odooibizaboost
+        }
     }
     
     log {
-        output file /var/log/caddy/ibizaboost.log
+        output file /var/log/caddy/ibizaboost.com.log
     }
 }
 ```
 
-**Accès** : https://crm.ibizaboost.com  
-**Base de données** : `ibizaboost` (extrait automatiquement)
+**Accès** : https://odoo.ibizaboost.com  
+**Base de données** : `odooibizaboost` (défini via header X-Odoo-dbfilter)
 
 ---
 
-### Exemple 3 : Plusieurs sous-domaines pour le même client
+### Exemple 3 : Domaine sans sous-domaine
 
-**Fichier** : `caddy/sites/bigclient.caddy`
+**Fichier** : `caddy/sites/boostcrm.caddy`
 
 ```caddy
-# ERP - Domaine: erp.bigclient.com → Base: bigclient
-erp.bigclient.com {
+# Domaine racine: boostcrm.com → Base: boostcrm
+boostcrm.com {
     encode gzip
+    
     handle /websocket* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter boostcrm
+        }
     }
+    
     handle /longpolling/* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter boostcrm
+        }
     }
+    
     handle {
-        reverse_proxy odoo:8069
+        @static {
+            path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+        }
+        header @static Cache-Control "public, max-age=31536000"
+        reverse_proxy odoo:8069 {
+            header_up X-Odoo-dbfilter boostcrm
+        }
     }
+    
     log {
-        output file /var/log/caddy/bigclient-erp.log
-    }
-}
-
-# CRM - Domaine: crm.bigclient.com → Base: bigclient (même base!)
-crm.bigclient.com {
-    encode gzip
-    handle /websocket* {
-        reverse_proxy odoo:8072
-    }
-    handle /longpolling/* {
-        reverse_proxy odoo:8072
-    }
-    handle {
-        reverse_proxy odoo:8069
-    }
-    log {
-        output file /var/log/caddy/bigclient-crm.log
+        output file /var/log/caddy/boostcrm.log
     }
 }
 ```
 
-⚠️ **Note** : Les deux sous-domaines partagent la **même base** `bigclient` car le 2ème segment est identique.
+**Accès** : https://boostcrm.com  
+**Base de données** : `boostcrm` (pas de sous-domaine)
 
 ---
 
@@ -346,17 +365,17 @@ rm /var/lib/odoo/caddy/logs/casaobras.log
 
 Avant de déployer, vérifiez :
 
-- [ ] La base de données est créée dans Odoo avec le **2ème segment du domaine** comme nom
-- [ ] Le nom de la base ne contient pas d'espaces ni de caractères spéciaux
-- [ ] Le fichier `.caddy` est créé dans `caddy/sites/`
-- [ ] Le nom du fichier correspond au **2ème segment** (ex: `casaobrasibiza.caddy`)
-- [ ] Le domaine suit le format `subdomain.clientname.tld` (ex: `erp.casaobrasibiza.com`)
+- [ ] La base de données est créée avec le nom **exact** (ex: `erpcasaobrasibiza`)
+- [ ] Le nom de la base ne contient pas d'espaces, points ni tirets (utilisez uniquement lettres/chiffres)
+- [ ] Le fichier `.caddy` est créé dans `caddy/sites/` avec le bon nom
+- [ ] Le header `X-Odoo-dbfilter` correspond **exactement** au nom de la base
+- [ ] Les 3 blocs `reverse_proxy` (websocket, longpolling, main) incluent le header
 - [ ] Le DNS est configuré et propagé (testez avec `ping`)
 - [ ] Les modifications sont commitées et pushées
-- [ ] Caddy a été rechargé sur le VPS
+- [ ] Caddy a été rechargé sur le VPS (`docker-compose restart caddy`)
 - [ ] Le site est accessible en HTTPS
 - [ ] Le certificat SSL est valide
-- [ ] Le dbfilter dans `odoo.conf` est configuré : `dbfilter = ^[^.]+\.([^.]+)\.`
+- [ ] `list_db = False` est activé dans `odoo.conf` (sécurité production)
 
 ---
 
@@ -388,31 +407,36 @@ ping erp.casaobras.com
 docker restart caddy
 ```
 
-### Mauvaise base de données affichée
+### Redirection vers /web/database/selector
 
-Vérifiez le `dbfilter` dans `odoo.conf` et la correspondance avec votre domaine :
+Si vous êtes redirigé vers le sélecteur de bases :
 
 ```bash
-# Vérifier le dbfilter dans odoo.conf
-docker exec odoo_app grep dbfilter /etc/odoo/odoo.conf
+# 1. Vérifier que dbfilter_from_header est chargé
+docker logs odoo_app | grep dbfilter_from_header
 
-# Vérifier le nom de la base
-docker exec odoo_db psql -U odoo -c "\l" | grep -E "Name|casaobras|ibizaboost"
+# 2. Vérifier que list_db est à False
+docker exec odoo_app grep list_db /etc/odoo/odoo.conf
 
-# Tester la regex dbfilter en Python
-docker exec odoo_app python3 -c "
-import re
-hostname = 'erp.casaobrasibiza.com'
-pattern = r'^[^.]+\.([^.]+)\.'
-match = re.search(pattern, hostname)
-print(f'Hostname: {hostname}')
-print(f'DB extrait: {match.group(1) if match else \"AUCUN\"}')
-"
+# 3. Vérifier que le header est envoyé
+docker logs caddy | grep "X-Odoo-dbfilter"
+
+# 4. Tester avec curl
+curl -I https://erp.casaobrasibiza.com
+
+# 5. Vérifier le nom exact de la base
+docker exec odoo_db psql -U odoo -d postgres -c "\l" | grep erp
 ```
 
-**Rappel** : Le nom de la base doit correspondre au **2ème segment du domaine** :
-- `erp.casaobrasibiza.com` → base : `casaobrasibiza`
-- `crm.ibizaboost.com` → base : `ibizaboost`
+**Solutions** :
+- Assurez-vous que le header `X-Odoo-dbfilter` est présent dans TOUS les blocs `reverse_proxy`
+- Vérifiez que le nom de base correspond exactement (pas de typo)
+- Effacez les cookies du navigateur ou testez en mode incognito
+
+**Rappel** : Convention de nommage :
+- `erp.casaobrasibiza.com` → base : `erpcasaobrasibiza`
+- `odoo.ibizaboost.com` → base : `odooibizaboost`
+- `boostcrm.com` → base : `boostcrm`
 
 ---
 

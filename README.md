@@ -105,19 +105,23 @@ Pour éviter de redémarrer à chaque modification, vous pouvez :
 
 ## 🏢 Multi-tenant
 
-Le paramètre `dbfilter = ^[^.]+\.([^.]+)\.` dans `odoo.conf` permet le multi-tenant basé sur le **2ème segment du domaine**.
+Le système multi-tenant utilise le module OCA `dbfilter_from_header` qui permet à Caddy d'envoyer le nom de la base via un header HTTP. Cela offre une flexibilité totale pour gérer tous types de domaines.
 
 ### Convention de nommage
 
-La base de données correspond au **2ème segment** du domaine :
+Le nom de base est formé en **concaténant le sous-domaine + première partie du domaine** (sans points) :
 
-| URL                          | Base de données |
-|------------------------------|----------------|
-| `erp.casaobrasibiza.com`     | `casaobrasibiza` |
-| `crm.ibizaboost.com`         | `ibizaboost` |
-| `admin.client.fr`            | `client` |
+| URL                          | Base de données      |
+|------------------------------|---------------------|
+| `erp.casaobrasibiza.com`     | `erpcasaobrasibiza` |
+| `crm.boost.com`              | `crmboost`          |
+| `boostcrm.com`               | `boostcrm`          |
+| `odoo.ibizaboost.com`        | `odooibizaboost`    |
 
-⚠️ **Le sous-domaine (erp, crm, admin, etc.) n'a PAS d'importance** - seul le 2ème segment compte.
+✅ **Avantages** :
+- Support pour tous types de domaines (avec ou sans sous-domaine)
+- Pas de limitation sur la structure du domaine
+- Configuration explicite via Caddy
 
 ### Configuration locale
 
@@ -125,24 +129,28 @@ Pour tester en local avec plusieurs bases, ajoutez à votre `/etc/hosts` :
 
 ```
 127.0.0.1  erp.casaobras.local
-127.0.0.1  crm.ibizaboost.local
+127.0.0.1  crm.boost.local
 ```
 
 Puis accédez :
-- `http://erp.casaobras.local:8069` → base `casaobras`
-- `http://crm.ibizaboost.local:8069` → base `ibizaboost`
+- `http://erp.casaobras.local:8069` → base `erpcasaobras`
+- `http://crm.boost.local:8069` → base `crmboost`
 
 ### En production (VPS)
 
-Configurez vos sous-domaines DNS pour pointer vers votre VPS. Odoo filtrera automatiquement la base selon la convention ci-dessus.
-
-Pour ajouter un nouveau client, utilisez le script :
+1. **Configurer le DNS** : Pointez vos domaines vers l'IP du VPS
+2. **Créer la configuration Caddy** avec le script :
 
 ```bash
-./scripts/add-client.sh casaobrasibiza.com erp
+./scripts/add-client.sh casaobrasibiza.com erp  # → base: erpcasaobrasibiza
+./scripts/add-client.sh boost.com crm           # → base: crmboost
+./scripts/add-client.sh boostcrm.com            # → base: boostcrm (sans sous-domaine)
 ```
 
-Voir [WORKFLOW_CLIENT.md](./WORKFLOW_CLIENT.md) pour plus de détails.
+3. **Créer la base de données** via le Database Manager avec le nom exact
+4. **Déployer** : `git push` puis `git pull` sur le VPS et redémarrer Caddy
+
+Voir [WORKFLOW_CLIENT.md](./WORKFLOW_CLIENT.md) pour le workflow complet.
 
 ## 🔐 Sécurité
 
