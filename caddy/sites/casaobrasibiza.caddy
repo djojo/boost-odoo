@@ -1,0 +1,8 @@
+erp.casaobrasibiza.com {
+    reverse_proxy odoo:8069 {
+        header_up X-Odoo-dbfilter casa_obras
+    }
+    log {
+        output file /var/log/caddy/casa_obras.log
+    }
+}
