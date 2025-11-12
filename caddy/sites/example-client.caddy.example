@@ -1,10 +1,10 @@
 # Exemple de configuration client
 # Copiez ce fichier et renommez-le en : clientname.caddy
 
-# Exemple : erp.casaobras.com → base de données "casaobras"
 # Convention : Le nom de base = 2ème partie du domaine
-# erp.casaobras.com → casaobras
+# erp.casaobrasibiza.com → casaobrasibiza
 # erp.iya.com → iya
+# Regex dbfilter : ^[^.]+\.([^.]+)\..+$
 erp.casaobras.com {
     # Compression
     encode gzip
