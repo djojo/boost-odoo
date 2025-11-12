@@ -38,6 +38,7 @@ services:
       - "443:443/udp"  # HTTP/3
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/sites:/caddy/sites
       - /var/lib/odoo/caddy/data:/data
       - /var/lib/odoo/caddy/config:/config
       - /var/lib/odoo/caddy/logs:/var/log/caddy
