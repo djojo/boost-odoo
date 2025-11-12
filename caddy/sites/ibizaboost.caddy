@@ -1,0 +1,38 @@
+# Configuration pour Ibiza Boost
+# Domaine: erp.ibizaboost.com → Base: erpibizaboost
+
+erp.ibizaboost.com {
+    # Compression
+    encode gzip
+    
+    # Websocket et Longpolling - Port 8072
+    handle /websocket* {
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpibizaboost
+        }
+    }
+    
+    handle /longpolling/* {
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpibizaboost
+        }
+    }
+    
+    # Route principale - Port 8069
+    handle {
+        # Cache pour les assets statiques
+        @static {
+            path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+        }
+        header @static Cache-Control "public, max-age=31536000"
+        
+        reverse_proxy odoo:8069 {
+            header_up X-Odoo-dbfilter erpibizaboost
+        }
+    }
+    
+    log {
+        output file /var/log/caddy/ibizaboost.log
+    }
+}
+
