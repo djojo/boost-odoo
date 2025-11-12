@@ -3,13 +3,32 @@
     email {$LETSENCRYPT_EMAIL}
     # Désactiver la télémétrie
     admin off
+    # Compression automatique
+    servers {
+        protocol {
+            experimental_http3
+        }
+    }
 }
 
 # ========================================
 # DOMAINE PRINCIPAL (Database Manager)
 # ========================================
 {$DOMAIN} {
-    reverse_proxy odoo:8069
+    # Compression automatique
+    encode gzip zstd
+    
+    # Cache pour les assets statiques
+    @static {
+        path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+    
+    reverse_proxy odoo:8069 {
+        # Headers pour de meilleures performances
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
     
     log {
         output file /var/log/caddy/main.log

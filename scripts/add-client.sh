@@ -60,13 +60,25 @@ cat > "$CADDY_FILE" << EOF
 # Généré le: $(date)
 
 $FULL_DOMAIN {
+    # Compression automatique
+    encode gzip zstd
+    
+    # Cache pour les assets statiques
+    @static {
+        path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+    
     # Ajouter le paramètre db si absent
     @no_db {
         not query db=*
     }
     rewrite @no_db {uri}?db=$DB_NAME
     
-    reverse_proxy odoo:8069
+    reverse_proxy odoo:8069 {
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
     
     log {
         output file /var/log/caddy/${DB_NAME}.log
