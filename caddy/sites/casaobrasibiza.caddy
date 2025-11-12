@@ -1,11 +1,9 @@
 erp.casaobrasibiza.com {
-    # Forcer la sélection de la base de données casa_obras
+    # Ajouter automatiquement le paramètre db si absent
     @no_db_param {
         not query db=*
     }
-    handle @no_db_param {
-        redir * "{uri}?db=casa_obras" 307
-    }
+    uri @no_db_param query +db=casa_obras
     
     reverse_proxy odoo:8069
     

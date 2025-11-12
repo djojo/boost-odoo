@@ -3,13 +3,11 @@
 
 # Exemple : erp.casaobras.com → base de données "casaobras"
 erp.casaobras.com {
-    # Forcer la sélection de la base de données
+    # Ajouter automatiquement le paramètre db si absent
     @no_db_param {
         not query db=*
     }
-    handle @no_db_param {
-        redir * "{uri}?db=casaobras" 307
-    }
+    uri @no_db_param query +db=casaobras
     
     reverse_proxy odoo:8069
     
@@ -23,9 +21,7 @@ erp.casaobras.com {
 #     @no_db_param {
 #         not query db=*
 #     }
-#     handle @no_db_param {
-#         redir * "{uri}?db=iya" 307
-#     }
+#     uri @no_db_param query +db=iya
 #     
 #     reverse_proxy odoo:8069
 #     
@@ -39,9 +35,7 @@ erp.casaobras.com {
 #     @no_db_param {
 #         not query db=*
 #     }
-#     handle @no_db_param {
-#         redir * "{uri}?db=autreclient" 307
-#     }
+#     uri @no_db_param query +db=autreclient
 #     
 #     reverse_proxy odoo:8069
 #     
