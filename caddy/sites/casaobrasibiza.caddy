@@ -1,14 +1,21 @@
+# Configuration pour Casa Obras Ibiza
+# Domaine: erp.casaobrasibiza.com → Base: erpcasaobrasibiza
+
 erp.casaobrasibiza.com {
     # Compression
     encode gzip
     
     # Websocket et Longpolling - Port 8072
     handle /websocket* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     handle /longpolling/* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     # Route principale - Port 8069
@@ -19,7 +26,9 @@ erp.casaobrasibiza.com {
         }
         header @static Cache-Control "public, max-age=31536000"
         
-        reverse_proxy odoo:8069
+        reverse_proxy odoo:8069 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     log {

@@ -1,16 +1,16 @@
 # Exemple de configuration client
 # Copiez ce fichier et renommez-le en : clientname.caddy
 
-# Convention de nommage (dbfilter: ^[^.]+\.([^.]+)\.)
-# Le nom de la base = 2ème segment du domaine
+# Convention de nommage : Concaténer sous-domaine + domaine sans points
 #
 # Exemples:
-#   erp.casaobrasibiza.com  → DB: casaobrasibiza
-#   crm.iya.com             → DB: iya
-#   admin.autreclient.fr    → DB: autreclient
+#   erp.casaobrasibiza.com  → DB: erpcasaobrasibiza
+#   crm.boost.com           → DB: crmboost  
+#   boostcrm.com            → DB: boostcrm
+#   iyaboatcrm.com          → DB: iyaboatcrm
 #
-# ⚠️ Le sous-domaine (erp, crm, admin, etc.) n'a PAS d'importance
-# ⚠️ Créez votre base avec le nom EXACT du 2ème segment
+# ⚠️ Caddy envoie le nom de base via header X-Odoo-dbfilter
+# ⚠️ Créez votre base avec le nom EXACT (sans points ni tirets)
 
 erp.casaobrasibiza.com {
     # Compression
@@ -18,11 +18,15 @@ erp.casaobrasibiza.com {
     
     # Websocket et Longpolling - Port 8072
     handle /websocket* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     handle /longpolling/* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     # Route principale - Port 8069
@@ -33,7 +37,9 @@ erp.casaobrasibiza.com {
         }
         header @static Cache-Control "public, max-age=31536000"
         
-        reverse_proxy odoo:8069
+        reverse_proxy odoo:8069 {
+            header_up X-Odoo-dbfilter erpcasaobrasibiza
+        }
     }
     
     log {
