@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Script pour ajouter un nouveau client Odoo multi-tenant
-# Usage: ./add-client.sh <db_name> <domain> [subdomain]
+# Usage: ./add-client.sh <domain> [subdomain]
 #
+# Convention : Le nom de base = 2ème partie du domaine
 # Exemples:
-#   ./add-client.sh casaobras casaobras.com erp
-#   ./add-client.sh iya iya.com crm
-#   ./add-client.sh client3 client3.com admin
+#   ./add-client.sh casaobrasibiza.com erp  → base: casaobrasibiza
+#   ./add-client.sh iya.com crm             → base: iya
 
 set -e
 
@@ -18,27 +18,28 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Variables
-DB_NAME=$1
-DOMAIN=$2
-SUBDOMAIN=${3:-erp}  # Par défaut: erp
+DOMAIN=$1
+SUBDOMAIN=${2:-erp}  # Par défaut: erp
 FULL_DOMAIN="${SUBDOMAIN}.${DOMAIN}"
+# Extraire le nom de base (2ème partie du domaine)
+DB_NAME=$(echo "$DOMAIN" | cut -d. -f1)
 CADDY_FILE="./caddy/sites/${DB_NAME}.caddy"
 
 # Validation
-if [ -z "$DB_NAME" ] || [ -z "$DOMAIN" ]; then
-    echo -e "${RED}❌ Usage: $0 <db_name> <domain> [subdomain]${NC}"
+if [ -z "$DOMAIN" ]; then
+    echo -e "${RED}❌ Usage: $0 <domain> [subdomain]${NC}"
     echo ""
     echo "Exemples:"
-    echo "  $0 casaobras casaobras.com erp"
-    echo "  $0 iya iya.com crm"
+    echo "  $0 casaobrasibiza.com erp  # → base: casaobrasibiza"
+    echo "  $0 iya.com crm             # → base: iya"
     echo ""
     exit 1
 fi
 
 echo -e "${BLUE}🚀 Configuration d'un nouveau client Odoo${NC}"
 echo ""
-echo -e "${YELLOW}Base de données:${NC} $DB_NAME"
 echo -e "${YELLOW}Domaine complet:${NC} $FULL_DOMAIN"
+echo -e "${YELLOW}Base de données:${NC} $DB_NAME ${RED}(extrait automatiquement)${NC}"
 echo ""
 
 # Vérifier si le fichier existe déjà
@@ -60,7 +61,7 @@ cat > "$CADDY_FILE" << EOF
 # Généré le: $(date)
 
 $FULL_DOMAIN {
-    # Compression (en dehors des handle, c'est OK)
+    # Compression
     encode gzip
     
     # Websocket et Longpolling - Port 8072
@@ -73,13 +74,8 @@ $FULL_DOMAIN {
     }
     
     # Route principale - Port 8069
+    # Odoo gère le matching de base via dbfilter natif
     handle {
-        # Ajouter le paramètre db si absent
-        @no_db {
-            not query db=*
-        }
-        rewrite @no_db {uri}?db=$DB_NAME
-        
         # Cache pour les assets statiques
         @static {
             path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
@@ -90,7 +86,7 @@ $FULL_DOMAIN {
     }
     
     log {
-        output file /var/log/caddy/${DB_NAME}.log
+        output file /var/log/caddy/${DOMAIN}.log
     }
 }
 EOF
@@ -104,6 +100,8 @@ echo ""
 echo -e "${YELLOW}1. Créer la base de données Odoo:${NC}"
 echo "   - Allez sur: https://votre-domaine-principal.com/web/database/manager"
 echo "   - Créez une base nommée: ${GREEN}$DB_NAME${NC}"
+echo "   ${RED}⚠️  IMPORTANT: Le nom de base DOIT être exactement '$DB_NAME'${NC}"
+echo "   ${RED}    (dbfilter extrait ce nom automatiquement depuis le domaine)${NC}"
 echo ""
 echo -e "${YELLOW}2. Configurer le DNS:${NC}"
 echo "   Type: A"

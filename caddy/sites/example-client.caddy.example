@@ -2,8 +2,11 @@
 # Copiez ce fichier et renommez-le en : clientname.caddy
 
 # Exemple : erp.casaobras.com → base de données "casaobras"
+# Convention : Le nom de base = 2ème partie du domaine
+# erp.casaobras.com → casaobras
+# erp.iya.com → iya
 erp.casaobras.com {
-    # Compression (en dehors des handle, c'est OK)
+    # Compression
     encode gzip
     
     # Websocket et Longpolling - Port 8072
@@ -16,13 +19,8 @@ erp.casaobras.com {
     }
     
     # Route principale - Port 8069
+    # Odoo gère le matching de base via dbfilter natif
     handle {
-        # Ajouter le paramètre db si absent
-        @no_db {
-            not query db=*
-        }
-        rewrite @no_db {uri}?db=casaobras
-        
         # Cache pour les assets statiques
         @static {
             path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot

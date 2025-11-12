@@ -1,5 +1,5 @@
 erp.casaobrasibiza.com {
-    # Compression (en dehors des handle, c'est OK)
+    # Compression
     encode gzip
     
     # Websocket et Longpolling - Port 8072
@@ -12,13 +12,8 @@ erp.casaobrasibiza.com {
     }
     
     # Route principale - Port 8069
+    # Odoo gère le matching de base via dbfilter natif
     handle {
-        # Ajouter le paramètre db si absent
-        @no_db {
-            not query db=*
-        }
-        rewrite @no_db {uri}?db=casa_obras
-        
         # Cache pour les assets statiques
         @static {
             path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
@@ -29,6 +24,6 @@ erp.casaobrasibiza.com {
     }
     
     log {
-        output file /var/log/caddy/casa_obras.log
+        output file /var/log/caddy/casaobrasibiza.log
     }
 }
