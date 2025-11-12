@@ -1,0 +1,137 @@
+---
+description: "Guidelines pour le projet Boost Odoo - Plateforme multi-tenant Odoo 18"
+globs:
+alwaysApply: true
+---
+
+# 🚀 Boost Odoo - Projet Multi-tenant
+
+## 📋 Vue d'ensemble
+
+Plateforme **Odoo 18 Community** en mode **multi-tenant** permettant de gérer plusieurs clients avec des domaines dédiés et des bases de données isolées.
+
+## 🏗️ Architecture
+
+- **Odoo 18.0** : ERP open-source
+- **PostgreSQL 15** : Base de données
+- **Caddy 2.8** : Reverse proxy avec SSL automatique (Let's Encrypt)
+- **Docker Compose** : Orchestration des conteneurs
+
+## 🔑 Multi-tenant
+
+### Convention de nommage
+
+Le nom de base est formé en **concaténant le sous-domaine + première partie du domaine** (sans points) :
+
+- `erp.casaobrasibiza.com` → base : `erpcasaobrasibiza`
+- `odoo.ibizaboost.com` → base : `odooibizaboost`
+- `boostcrm.com` → base : `boostcrm`
+
+### Fonctionnement
+
+- **Module OCA** : `dbfilter_from_header` charge la base selon le header HTTP
+- **Caddy** : Envoie le header `X-Odoo-dbfilter` avec le nom de la base
+- **Isolation** : Chaque client a sa propre base de données et ses propres données
+
+## 📁 Structure du projet
+
+```
+Boost Odoo/
+├── addons/                    # Modules Odoo custom et OCA
+│   ├── dbfilter_from_header/  # Module multi-tenant (OCA)
+│   └── helpdesk_mgmt/         # Module helpdesk (OCA)
+├── caddy/
+│   └── sites/                 # Configurations client (*.caddy)
+├── data/                      # Filestore Odoo (ignoré par git)
+├── postgres/                  # Données PostgreSQL (ignoré par git)
+├── docs/                      # 📚 DOCUMENTATION COMPLÈTE
+│   ├── WORKFLOW_CLIENT.md     # Guide gestion clients
+│   └── PRODUCTION_WORKFLOW.md # Guide production
+├── scripts/
+│   └── add-client.sh          # Script ajout client automatique
+├── docker-compose.yml         # Config développement
+├── docker-compose.prod.yml    # Config production
+├── odoo.conf                  # Config développement local
+├── odoo.prod.conf             # Config production (VPS)
+└── Caddyfile                  # Config reverse proxy
+```
+
+## 📚 Documentation
+
+**Toute la documentation est dans le dossier `docs/` :**
+
+- **`docs/WORKFLOW_CLIENT.md`** : Guide complet pour ajouter/gérer des clients
+- **`docs/PRODUCTION_WORKFLOW.md`** : Guide de déploiement et gestion production
+- **`README.md`** : Guide de démarrage rapide
+
+## 🔧 Environnements
+
+### Développement Local
+
+- Configuration : `odoo.conf`
+- `list_db = True` (Database Manager activé)
+- `workers = 0` (hot reload)
+- Pas de multi-tenant (pas de reverse proxy)
+- Port : `http://localhost:8069`
+
+### Production (VPS)
+
+- Configuration : `odoo.prod.conf` (chargé automatiquement)
+- `list_db = False` (sécurité)
+- `workers = 4` (performances)
+- Multi-tenant activé (`dbfilter_from_header`)
+- SSL automatique via Caddy
+- Domaines : `https://erp.ibizaboost.com`, `https://odoo.ibizaboost.com`, etc.
+
+## 🚀 Workflow ajout client
+
+1. **Générer la config Caddy** : `./scripts/add-client.sh casaobrasibiza.com erp`
+2. **Configurer le DNS** : Pointer le domaine vers le VPS
+3. **Déployer** : `git push` puis `git pull` sur le VPS
+4. **Créer la base** : Via le Database Manager avec le nom exact
+5. **Redémarrer Caddy** : `docker-compose restart caddy`
+
+Voir `docs/WORKFLOW_CLIENT.md` pour le guide détaillé.
+
+## 🔐 Sécurité Production
+
+- SSL automatique via Let's Encrypt
+- Database Manager désactivé (`list_db = False`)
+- PostgreSQL non exposé
+- Proxy mode activé pour headers Caddy
+- Master password à changer (`admin_passwd` dans `odoo.prod.conf`)
+
+## 🎯 Modules disponibles
+
+- **Base Odoo 18** : Tous les modules Community
+- **dbfilter_from_header** : Multi-tenant (OCA)
+- **helpdesk_mgmt** : Gestion des tickets support (OCA)
+- Modules custom dans `addons/`
+
+## 💡 Conventions de code
+
+- **Configs** : Séparer dev/prod (odoo.conf / odoo.prod.conf)
+- **Modules** : Placer dans `addons/`, commiter dans git
+- **Caddy** : 1 fichier par client dans `caddy/sites/`
+- **Nommage bases** : Pas d'espaces, points ou tirets (alphanumerique uniquement)
+- **Documentation** : Tout dans `docs/` en Markdown
+
+## 🔄 Déploiement
+
+```bash
+# Local → Git
+git add . && git commit -m "message" && git push origin main
+
+# VPS → Pull et restart
+ssh root@vps-ip
+cd /opt/boost-odoo
+git pull origin main
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml restart odoo
+```
+
+## 📞 Support
+
+Pour toute question, consulter :
+- `docs/WORKFLOW_CLIENT.md` - Gestion clients
+- `docs/PRODUCTION_WORKFLOW.md` - Production
+- `README.md` - Démarrage rapide

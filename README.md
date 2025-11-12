@@ -150,7 +150,7 @@ Puis accédez :
 3. **Créer la base de données** via le Database Manager avec le nom exact
 4. **Déployer** : `git push` puis `git pull` sur le VPS et redémarrer Caddy
 
-Voir [WORKFLOW_CLIENT.md](./WORKFLOW_CLIENT.md) pour le workflow complet.
+Voir [docs/WORKFLOW_CLIENT.md](./docs/WORKFLOW_CLIENT.md) pour le workflow complet.
 
 ## 🔐 Sécurité
 
