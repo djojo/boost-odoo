@@ -14,6 +14,16 @@ erp.casaobrasibiza.com {
     }
     rewrite @no_db {uri}?db=casa_obras
     
+    # Longpolling pour Odoo (websocket/notifications)
+    @longpolling {
+        path /longpolling/*
+    }
+    reverse_proxy @longpolling odoo:8072 {
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+    
+    # Route principale vers Odoo
     reverse_proxy odoo:8069 {
         # Headers pour de meilleures performances
         header_up X-Forwarded-Proto {scheme}
