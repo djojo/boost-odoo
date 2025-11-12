@@ -60,11 +60,11 @@ cat > "$CADDY_FILE" << EOF
 # Généré le: $(date)
 
 $FULL_DOMAIN {
-    # Ajouter automatiquement le paramètre db si absent
-    @no_db_param {
+    # Ajouter le paramètre db si absent
+    @no_db {
         not query db=*
     }
-    uri @no_db_param query +db=$DB_NAME
+    rewrite @no_db {uri}?db=$DB_NAME
     
     reverse_proxy odoo:8069
     

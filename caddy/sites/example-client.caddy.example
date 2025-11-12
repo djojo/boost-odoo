@@ -3,11 +3,11 @@
 
 # Exemple : erp.casaobras.com → base de données "casaobras"
 erp.casaobras.com {
-    # Ajouter automatiquement le paramètre db si absent
-    @no_db_param {
+    # Ajouter le paramètre db si absent
+    @no_db {
         not query db=*
     }
-    uri @no_db_param query +db=casaobras
+    rewrite @no_db {uri}?db=casaobras
     
     reverse_proxy odoo:8069
     
@@ -18,10 +18,10 @@ erp.casaobras.com {
 
 # Autre exemple : crm.iya.com → base de données "iya"
 # crm.iya.com {
-#     @no_db_param {
+#     @no_db {
 #         not query db=*
 #     }
-#     uri @no_db_param query +db=iya
+#     rewrite @no_db {uri}?db=iya
 #     
 #     reverse_proxy odoo:8069
 #     
@@ -32,10 +32,10 @@ erp.casaobras.com {
 
 # Autre exemple : admin.autreclient.com → base de données "autreclient"
 # admin.autreclient.com {
-#     @no_db_param {
+#     @no_db {
 #         not query db=*
 #     }
-#     uri @no_db_param query +db=autreclient
+#     rewrite @no_db {uri}?db=autreclient
 #     
 #     reverse_proxy odoo:8069
 #     
