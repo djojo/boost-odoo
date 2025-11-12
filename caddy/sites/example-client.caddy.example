@@ -1,11 +1,18 @@
 # Exemple de configuration client
 # Copiez ce fichier et renommez-le en : clientname.caddy
 
-# Convention : Le nom de base = 2ème partie du domaine
-# erp.casaobrasibiza.com → casaobrasibiza
-# erp.iya.com → iya
-# Regex dbfilter : ^[^.]+\.([^.]+)\..+$
-erp.casaobras.com {
+# Convention de nommage (dbfilter: ^[^.]+\.([^.]+)\.)
+# Le nom de la base = 2ème segment du domaine
+#
+# Exemples:
+#   erp.casaobrasibiza.com  → DB: casaobrasibiza
+#   crm.iya.com             → DB: iya
+#   admin.autreclient.fr    → DB: autreclient
+#
+# ⚠️ Le sous-domaine (erp, crm, admin, etc.) n'a PAS d'importance
+# ⚠️ Créez votre base avec le nom EXACT du 2ème segment
+
+erp.casaobrasibiza.com {
     # Compression
     encode gzip
     
@@ -19,7 +26,6 @@ erp.casaobras.com {
     }
     
     # Route principale - Port 8069
-    # Odoo gère le matching de base via dbfilter natif
     handle {
         # Cache pour les assets statiques
         @static {
@@ -31,35 +37,7 @@ erp.casaobras.com {
     }
     
     log {
-        output file /var/log/caddy/casaobras.log
+        output file /var/log/caddy/casaobrasibiza.log
     }
 }
-
-# Autre exemple : crm.iya.com → base de données "iya"
-# crm.iya.com {
-#     @no_db {
-#         not query db=*
-#     }
-#     rewrite @no_db {uri}?db=iya
-#     
-#     reverse_proxy odoo:8069
-#     
-#     log {
-#         output file /var/log/caddy/iya.log
-#     }
-# }
-
-# Autre exemple : admin.autreclient.com → base de données "autreclient"
-# admin.autreclient.com {
-#     @no_db {
-#         not query db=*
-#     }
-#     rewrite @no_db {uri}?db=autreclient
-#     
-#     reverse_proxy odoo:8069
-#     
-#     log {
-#         output file /var/log/caddy/autreclient.log
-#     }
-# }
 
