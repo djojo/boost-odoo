@@ -1,0 +1,39 @@
+[options]
+addons_path = /mnt/extra-addons
+db_host = db
+db_port = 5432
+db_user = odoo
+db_password = odoo
+
+# ==========================================
+# FICHIER EXEMPLE - Copier vers odoo.conf
+# ==========================================
+#
+# Pour le développement local:
+#   Utilisez ce fichier tel quel (ou odoo.conf déjà présent)
+#
+# Pour la production:
+#   Utilisez odoo.prod.conf qui sera automatiquement chargé
+#   via docker-compose.prod.yml
+#
+# ==========================================
+
+# Database Manager (True en dev, False en prod)
+list_db = True
+
+# Admin password (⚠️ CHANGEZ EN PRODUCTION!)
+admin_passwd = admin
+
+# Log level
+log_level = info
+
+# Workers (0 en dev pour hot reload, 4+ en prod)
+workers = 0
+
+# Multi-tenant (vide en dev, avec dbfilter_from_header en prod)
+dbfilter = 
+server_wide_modules = base,web
+
+# Proxy mode (False en dev, True en prod avec Caddy)
+proxy_mode = False
+

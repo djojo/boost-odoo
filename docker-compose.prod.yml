@@ -19,7 +19,7 @@ services:
       - PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ./addons:/mnt/extra-addons
-      - ./odoo.conf:/etc/odoo/odoo.conf
+      - ./odoo.prod.conf:/etc/odoo/odoo.conf  # Utilise la config PRODUCTION
       - /var/lib/odoo/data:/var/lib/odoo
     # Caddy va gérer le SSL et le reverse proxy
     # Pas besoin de ports exposés, Caddy s'en occupe
