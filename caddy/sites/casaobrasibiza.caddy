@@ -4,15 +4,18 @@ erp.casaobrasibiza.com {
     
     # Websocket et Longpolling - Port 8072
     handle /websocket* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter casaobrasibiza
+        }
     }
     
     handle /longpolling/* {
-        reverse_proxy odoo:8072
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter casaobrasibiza
+        }
     }
     
     # Route principale - Port 8069
-    # Odoo gère le matching de base via dbfilter natif
     handle {
         # Cache pour les assets statiques
         @static {
@@ -20,7 +23,10 @@ erp.casaobrasibiza.com {
         }
         header @static Cache-Control "public, max-age=31536000"
         
-        reverse_proxy odoo:8069
+        reverse_proxy odoo:8069 {
+            # Forcer la base de données via header
+            header_up X-Odoo-dbfilter casaobrasibiza
+        }
     }
     
     log {
