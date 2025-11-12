@@ -37,11 +37,6 @@
     }
 }
 
-# Redirect www vers le domaine principal
-www.{$DOMAIN} {
-    redir https://{$DOMAIN}{uri} permanent
-}
-
 # ========================================
 # CLIENTS - Import des configurations
 # ========================================
