@@ -60,6 +60,9 @@ cat > "$CADDY_FILE" << EOF
 # Généré le: $(date)
 
 $FULL_DOMAIN {
+    # Compression (en dehors des handle, c'est OK)
+    encode gzip
+    
     # Websocket et Longpolling - Port 8072
     handle /websocket* {
         reverse_proxy odoo:8072
@@ -76,6 +79,12 @@ $FULL_DOMAIN {
             not query db=*
         }
         rewrite @no_db {uri}?db=$DB_NAME
+        
+        # Cache pour les assets statiques
+        @static {
+            path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+        }
+        header @static Cache-Control "public, max-age=31536000"
         
         reverse_proxy odoo:8069
     }
