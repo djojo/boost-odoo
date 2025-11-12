@@ -105,25 +105,44 @@ Pour éviter de redémarrer à chaque modification, vous pouvez :
 
 ## 🏢 Multi-tenant
 
-Le paramètre `dbfilter = ^%d$` dans `odoo.conf` permet le multi-tenant basé sur le sous-domaine.
+Le paramètre `dbfilter = ^[^.]+\.([^.]+)\.` dans `odoo.conf` permet le multi-tenant basé sur le **2ème segment du domaine**.
+
+### Convention de nommage
+
+La base de données correspond au **2ème segment** du domaine :
+
+| URL                          | Base de données |
+|------------------------------|----------------|
+| `erp.casaobrasibiza.com`     | `casaobrasibiza` |
+| `crm.ibizaboost.com`         | `ibizaboost` |
+| `admin.client.fr`            | `client` |
+
+⚠️ **Le sous-domaine (erp, crm, admin, etc.) n'a PAS d'importance** - seul le 2ème segment compte.
 
 ### Configuration locale
 
 Pour tester en local avec plusieurs bases, ajoutez à votre `/etc/hosts` :
 
 ```
-127.0.0.1  odoo.local
-127.0.0.1  tenant1.odoo.local
-127.0.0.1  tenant2.odoo.local
+127.0.0.1  erp.casaobras.local
+127.0.0.1  crm.ibizaboost.local
 ```
 
 Puis accédez :
-- `http://tenant1.odoo.local:8069` → base `tenant1`
-- `http://tenant2.odoo.local:8069` → base `tenant2`
+- `http://erp.casaobras.local:8069` → base `casaobras`
+- `http://crm.ibizaboost.local:8069` → base `ibizaboost`
 
 ### En production (VPS)
 
-Configurez vos sous-domaines DNS pour pointer vers votre VPS, Odoo filtrera automatiquement la base selon le sous-domaine.
+Configurez vos sous-domaines DNS pour pointer vers votre VPS. Odoo filtrera automatiquement la base selon la convention ci-dessus.
+
+Pour ajouter un nouveau client, utilisez le script :
+
+```bash
+./scripts/add-client.sh casaobrasibiza.com erp
+```
+
+Voir [WORKFLOW_CLIENT.md](./WORKFLOW_CLIENT.md) pour plus de détails.
 
 ## 🔐 Sécurité
 
