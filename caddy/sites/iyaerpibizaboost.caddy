@@ -1,0 +1,38 @@
+# Configuration pour le client: iyaerpibizaboost
+# Domaine: iyaerp.ibizaboost.com → Base: iyaerpibizaboost
+# Généré le: Jeu 13 nov 2025 07:09:32 +07
+
+iyaerp.ibizaboost.com {
+    # Compression
+    encode gzip
+    
+    # Websocket et Longpolling - Port 8072
+    handle /websocket* {
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter iyaerpibizaboost
+        }
+    }
+    
+    handle /longpolling/* {
+        reverse_proxy odoo:8072 {
+            header_up X-Odoo-dbfilter iyaerpibizaboost
+        }
+    }
+    
+    # Route principale - Port 8069
+    handle {
+        # Cache pour les assets statiques
+        @static {
+            path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+        }
+        header @static Cache-Control "public, max-age=31536000"
+        
+        reverse_proxy odoo:8069 {
+            header_up X-Odoo-dbfilter iyaerpibizaboost
+        }
+    }
+    
+    log {
+        output file /var/log/caddy/iyaerpibizaboost.log
+    }
+}
